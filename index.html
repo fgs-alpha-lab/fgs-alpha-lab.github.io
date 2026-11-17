@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FGS Alpha &amp; FGS Intelligence Engine</title>
+<meta name="description" content="A system that trades Nasdaq-100 futures on its own, and another that reviews everything it did. Built by Yuniel Enríquez. Demo account.">
+<meta name="author" content="Yuniel Enríquez">
+<meta name="theme-color" content="#08101E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FGS Alpha &amp; FGS Intelligence Engine">
+<meta property="og:description" content="A system that trades the market on its own. And another that watches over it.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FGS Alpha &amp; FGS Intelligence Engine">
+<meta name="twitter:description" content="A system that trades the market on its own. And another that watches over it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2308101E'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='28' font-weight='800' fill='%23F2B33D'%3EFGS%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#F5F6F8;--paper2:#ECEEF2;--ink:#0C1424;--muted:#566173;--line:#D9DEE5;
+  --th:#08101E;--th2:#0E1829;--thline:#1E2B44;--thtext:#E9EDF4;--thmuted:#8E99AD;
+  --amber:#F2B33D;--entry:#E5484D;--exit:#4C7DFF;--ok:#1F9D63;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue","Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:19px;line-height:1.55;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+section{padding:128px 0}
+.th{background:var(--th);color:var(--thtext)}
+.alt{background:var(--paper2)}
+h1{text-wrap:balance;font-size:clamp(38px,5.4vw,72px);line-height:1.02;letter-spacing:-.035em;font-weight:700;margin:0;max-width:15ch}
+h2{text-wrap:balance;font-size:clamp(34px,5vw,66px);line-height:1.04;letter-spacing:-.032em;font-weight:700;margin:0 0 24px;max-width:17ch}
+h3{font-size:24px;line-height:1.2;letter-spacing:-.015em;margin:0 0 8px}
+p{margin:0}
+.lead{font-size:clamp(19px,1.8vw,24px);line-height:1.45;color:var(--muted);max-width:34em}
+.th .lead{color:var(--thmuted)}
+.small{font-size:15px;color:var(--muted)}
+.th .small{color:var(--thmuted)}
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid currentColor;background:transparent;color:inherit;border-radius:999px;padding:10px 20px;font-size:16px;font-weight:600;white-space:nowrap}
+.btn:hover{background:rgba(127,127,127,.12)}
+:focus-visible{outline:3px solid var(--exit);outline-offset:3px}
+
+/* ---------- portada ---------- */
+.hero{padding:40px 0 96px;min-height:100vh}
+.mark{font-weight:800;letter-spacing:-.02em;font-size:22px;margin-bottom:56px}
+.hero .lead{margin-top:24px;max-width:30em}
+.stage{margin-top:48px;border-top:1px solid var(--thline);padding-top:36px}
+.stage-top{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:40px;align-items:end}
+.clock{white-space:nowrap;font-size:clamp(52px,6vw,84px);font-weight:700;letter-spacing:-.04em;line-height:1}
+.clock-sub{color:var(--thmuted);font-size:16px;margin-top:10px}
+#hp{width:100%;height:auto;display:block}
+.rows{margin-top:36px}
+.row{display:grid;grid-template-columns:56px 1fr 92px;align-items:center;gap:16px;padding:12px 0;border-top:1px solid var(--thline);transition:background .3s}
+.row:last-child{border-bottom:1px solid var(--thline)}
+.row b{font-size:18px}
+.dots{display:flex;gap:10px;flex-wrap:wrap}
+.dot{width:16px;height:16px;border-radius:50%;background:#16223A;box-shadow:inset 0 0 0 1px #2A3A58;transition:background .15s,box-shadow .15s}
+.dot.on{background:var(--amber);box-shadow:0 0 14px rgba(242,179,61,.55)}
+.row .n{text-align:right;color:var(--thmuted);font-size:16px}
+.row.full{background:rgba(242,179,61,.08)}
+.row.full .n{color:var(--amber);font-weight:700}
+.fin{margin-top:28px;min-height:44px}
+.fin p{font-size:clamp(20px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;color:var(--thmuted)}
+.fin p.go{color:var(--thtext)}
+.fin p.go span{color:var(--amber)}
+.scrub{margin-top:20px;display:flex;gap:12px;align-items:center}
+.scrub input{flex:1;accent-color:var(--amber);height:28px}
+.scrub .btn{color:var(--thtext)}
+
+/* ---------- quién ---------- */
+.steps{list-style:none;margin:64px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--ink)}
+.steps li{padding:22px 20px 0 0;position:relative}
+.steps li::before{content:"";position:absolute;top:-8px;left:0;width:14px;height:14px;border-radius:50%;background:var(--ink)}
+.steps li.now::before{background:var(--paper);box-shadow:inset 0 0 0 3px var(--ink)}
+.steps .when{font-weight:700;font-size:17px;margin-bottom:6px}
+.steps p{font-size:16px;color:var(--muted);line-height:1.45}
+.facts{margin-top:72px;font-size:clamp(22px,2.4vw,30px);line-height:1.35;letter-spacing:-.015em;max-width:26em;font-weight:600}
+.facts span{color:var(--muted);font-weight:500}
+
+/* ---------- operación ---------- */
+.tr-wrap{margin-top:48px}
+.tr-svg{overflow-x:auto}
+.tr-svg svg{width:100%;min-width:720px;height:auto;display:block}
+table.blot{width:100%;min-width:520px;border-collapse:collapse;margin-top:28px;font-size:16px}
+table.blot th{text-align:left;font-weight:500;color:var(--thmuted);font-size:14px;padding:8px 8px 8px 0;border-bottom:1px solid var(--thline)}
+table.blot td{padding:12px 8px 12px 0;border-bottom:1px solid var(--thline)}
+table.blot .r{text-align:right}
+.pl{display:flex;gap:32px;flex-wrap:wrap;align-items:baseline;margin-top:20px}
+.pl b{font-size:28px;color:#3CCB8A;letter-spacing:-.02em}
+.anim .a{opacity:0;animation:aIn .6s ease forwards}.anim .a1{animation-delay:.3s}.anim .a2{animation-delay:1.1s}.anim .a3{animation-delay:1.8s}
+@keyframes aIn{to{opacity:1}}
+
+/* ---------- riesgo ---------- */
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:56px}
+.three h3{font-size:22px}
+.three p{color:var(--muted);font-size:17px}
+
+/* ---------- motor ---------- */
+.flow{display:grid;grid-template-columns:1fr 1fr 1fr .8fr;margin-top:64px;border-top:1px solid var(--thline)}
+.cyc{padding:28px 28px 0 0;border-right:1px solid var(--thline);margin-right:28px}
+.cyc:last-child{border-right:0;margin-right:0}
+.cyc .k{font-size:15px;color:var(--amber);font-weight:700;margin-bottom:14px}
+.cyc p{color:var(--thmuted);font-size:16px;line-height:1.5}
+.cyc.you h3{font-size:30px;letter-spacing:-.02em}
+details{margin-top:18px}
+summary{cursor:pointer;font-size:15px;font-weight:600;color:var(--thtext);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+ ";color:var(--amber)}
+details[open] summary::before{content:"− "}
+details .ex{margin-top:10px;font-size:15px;color:var(--thtext);background:var(--th2);border-radius:10px;padding:14px 16px;line-height:1.5}
+details .ex small{display:block;color:var(--thmuted);font-size:13px;margin-top:8px}
+
+/* ---------- juez ---------- */
+.judge{display:grid;grid-template-columns:1.4fr 1fr;gap:64px;margin-top:56px;align-items:start}
+.conds{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.conds li{padding:16px 0 16px 40px;border-bottom:1px solid var(--line);position:relative;font-size:19px}
+.conds li::before{content:"✓";position:absolute;left:4px;top:14px;font-weight:800;color:var(--ok)}
+.conds li small{display:block;color:var(--muted);font-size:15px;margin-top:2px}
+.today{background:var(--ink);color:#fff;border-radius:18px;padding:32px}
+.today .big{font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.today p{color:#B8C1D1;font-size:17px;margin-top:10px}
+.today hr{border:0;border-top:1px solid #2A3550;margin:24px 0}
+
+/* ---------- negocio ---------- */
+.path{list-style:none;margin:64px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.path li{padding:0 28px 0 0;position:relative}
+.path .bar{height:6px;border-radius:3px;background:var(--ink);margin-bottom:22px}
+.path li:nth-child(2) .bar{opacity:.7}.path li:nth-child(3) .bar{opacity:.45}.path li:nth-child(4) .bar{opacity:.25}
+.path h3{font-size:22px}
+.path p{color:var(--muted);font-size:17px}
+.also{margin-top:56px;font-size:clamp(20px,2vw,26px);line-height:1.4;letter-spacing:-.01em;font-weight:600;max-width:30em}
+
+/* ---------- dónde estamos ---------- */
+.road{list-style:none;margin:56px 0 0;padding:0;counter-reset:r}
+.road li{display:grid;grid-template-columns:72px 1fr;gap:16px;padding:24px 0;border-top:1px solid var(--line);counter-increment:r}
+.road li::before{content:counter(r);font-size:40px;font-weight:700;letter-spacing:-.03em;color:var(--line)}
+.road li.done::before{color:var(--ok)}
+.road li.cur::before{color:var(--ink)}
+.road h3{font-size:24px}
+.road p{color:var(--muted);font-size:17px}
+.honest{margin-top:40px;font-size:21px;max-width:34em}
+
+/* ---------- 2022 ---------- */
+.story{padding:160px 0 48px}
+.story-body{margin-top:40px;max-width:34em}
+.finale{padding:24vh 0 64px;text-align:center}
+.finale .f1{text-wrap:balance;font-size:clamp(20px,2.4vw,30px);line-height:1.3;letter-spacing:-.01em;color:var(--thmuted);margin:0 auto;max-width:none}
+.finale .f2{white-space:nowrap;font-size:clamp(34px,9.6vw,124px);font-weight:700;letter-spacing:-.045em;line-height:1;margin-top:22px;color:#fff}
+.finale .f3{margin-top:40px;font-size:16px;color:var(--thmuted)}
+.finale p{transition:opacity 1.1s ease,transform 1.1s ease}
+.finale .f2{transition-delay:1.2s}.finale .f3{transition-delay:2s}
+.finale.pre p{opacity:0;transform:translateY(10px)}
+.story-body p{font-size:21px;line-height:1.6;color:var(--thmuted);margin-bottom:22px;max-width:32em}
+.story-body p b{color:var(--thtext);font-weight:600}
+.story-body .vow{font-size:clamp(28px,3.2vw,42px);line-height:1.18;letter-spacing:-.025em;font-weight:700;color:var(--thtext)}
+.story-body .vow small{display:block;margin-top:28px;font-size:17px;letter-spacing:0;font-weight:500;color:var(--thmuted)}
+.who{margin-top:0;padding-top:32px;border-top:1px solid var(--thline);display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;align-items:end}
+.who .name{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.who p{color:var(--thmuted);font-size:17px;max-width:30em;margin-top:6px}
+.who a{color:var(--thtext);font-size:19px}
+.foot{margin-top:28px;font-size:13px;color:var(--thmuted)}
+
+@media (max-width:860px){
+  section{padding:84px 0}
+  .stage-top{grid-template-columns:1fr;gap:20px}
+  .steps{grid-template-columns:1fr;border-top:0;border-left:2px solid var(--ink);margin-left:6px}
+  .steps li{padding:0 0 28px 24px}
+  .steps li::before{top:4px;left:-8px}
+  .three,.judge,.story-body{grid-template-columns:1fr;gap:36px}
+  .flow{grid-template-columns:1fr}
+  .cyc{border-right:0;margin-right:0;border-bottom:1px solid var(--thline);padding-bottom:28px}
+  .path{grid-template-columns:1fr;gap:32px}
+  .row{grid-template-columns:44px 1fr 64px;gap:10px}
+  .dot{width:13px;height:13px}
+  .dots{gap:7px}
+  .story{padding:100px 0 40px}
+  .finale{padding:18vh 0 48px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.anim .a{opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<section class="th hero" aria-label="Cover">
+  <div class="wrap">
+    <div class="mark">FGS</div>
+    <h1>A system that trades the market on its own. And another that watches over it.</h1>
+    <p class="lead">FGS Alpha trades Nasdaq‑100 futures (NQ) without anyone touching a thing. FGS Intelligence Engine reviews everything it did and proposes how to improve it.</p>
+
+    <div class="stage">
+      <div class="stage-top">
+        <div>
+          <div class="clock" id="clk">6:40 AM</div>
+          <div class="clock-sub">Friday, October 16, 2026, Chicago time</div>
+        </div>
+        <svg id="hp" viewBox="0 0 1000 150" role="img" aria-label="NQ price the system read, minute by minute"></svg>
+      </div>
+      <div class="rows" id="hrows" aria-label="The 6 strategies and their rules"></div>
+      <div class="fin"><p id="hfin" aria-live="polite"></p></div>
+      <div class="scrub">
+        <button class="btn" id="hplay">Replay</button>
+        <input type="range" id="hs" min="0" max="0" aria-label="Pick a minute of the day">
+      </div>
+      <p class="small" style="margin-top:18px">A real replay of what the system recorded: 262 minutes, with 34 rules checked in each one. Every lit dot is a rule that was met. Drag the bar to see any minute.</p>
+    </div>
+  </div>
+</section>
+
+<!-- QUIÉN -->
+<section aria-label="Who built it">
+  <div class="wrap">
+    <h2>One person. Fourteen months.</h2>
+    <p class="lead">I’m not a programmer. I designed the engineering protocol that governs how every piece is designed, built and verified. AI writes the code by following that protocol.</p>
+    <ol class="steps">
+      <li><div class="when">September 2025</div><p>Goes full-time on the markets: books, trading courses, events.</p></li>
+      <li><div class="when">February 2026</div><p>Designs the system: a 16-module manual of rules, principles and procedures.</p></li>
+      <li><div class="when">2026</div><p>Builds it piece by piece, each piece with its own tests.</p></li>
+      <li><div class="when">October 2026</div><p>Build complete. It trades on its own in a demo account.</p></li>
+      <li class="now"><div class="when">Now</div><p>Fixing the details so it runs around the clock.</p></li>
+    </ol>
+    <p class="facts">6 strategies. 34 rules checked every minute. <span>1,442 automated tests the code has to pass before every change.</span></p>
+  </div>
+</section>
+
+<!-- OPERACIÓN -->
+<section class="th" aria-label="The trade">
+  <div class="wrap">
+    <h2>In at 11:11:00. Out at 11:11:38. No one touched a thing.</h2>
+    <p class="lead">The October 16 entry and exit, on the 1-minute candles of that moment.</p>
+    <div class="tr-wrap" id="tr"></div>
+    <p class="small" style="margin-top:24px">Demo account. One trade doesn’t prove performance. It proves the system decides, enters and exits on its own.</p>
+  </div>
+</section>
+
+<!-- RIESGO -->
+<section aria-label="Risk">
+  <div class="wrap">
+    <h2>No trade can destroy the account.</h2>
+    <div class="three">
+      <div><h3>It asks permission before every order.</h3><p>A risk control says yes or no before the order goes out. At 11:10 it said yes.</p></div>
+      <div><h3>It has an emergency brake.</h3><p>If something doesn’t add up, it closes the position and stops. On October 16, it did.</p></div>
+      <div><h3>It deletes nothing.</h3><p>Every decision is recorded with everything it checked. That day, 552 of them.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- MOTOR -->
+<section class="th" aria-label="The engine">
+  <div class="wrap">
+    <h2>Then the engine reviews everything it did.</h2>
+    <p class="lead">FGS Intelligence Engine (the engine) works in three cycles, always in this order. It never touches the money or the system: it only reads, measures and proposes.</p>
+    <div class="flow">
+      <div class="cyc">
+        <div class="k">Cycle 1</div>
+        <h3>Replays every recorded day.</h3>
+        <p>It goes back through every minute and explains why there were no signals, or where the system failed internally.</p>
+        <details><summary>Real example</summary><div class="ex">On October 16, E2 couldn’t act in any of the 262 minutes. The engine pinpointed which of its rules blocked it all day.<small>Measured from what the system recorded.</small></div></details>
+      </div>
+      <div class="cyc">
+        <div class="k">Cycle 2</div>
+        <h3>Tests hypotheses without risking money.</h3>
+        <p>A hypothesis is a new strategy or a change to an existing one. It trades in practice mode on days already recorded, and a judge decides.</p>
+        <details><summary>Real example</summary><div class="ex">A version of E4 with two fewer rules: 15 practice trades. It needs at least 50 before the judge can approve it.<small>Engine report, week 45 of 2026.</small></div></details>
+      </div>
+      <div class="cyc">
+        <div class="k">Cycle 3</div>
+        <h3>Reasons over what was measured.</h3>
+        <p>It reads what cycles 1 and 2 measured and proposes diagnoses, hypotheses, improvements to the system and improvements to the engine itself. Every proposal comes with a prediction that can be checked.</p>
+        <details><summary>Real example</summary><div class="ex">It found a flaw in its own judge: it was counting market types by mixing practice days with test days. It proposed separating them and predicted the number that should come out.<small>Engine proposals, October 19, 2026.</small></div></details>
+      </div>
+      <div class="cyc you">
+        <div class="k">Always</div>
+        <h3>A person decides.</h3>
+        <p>Nothing applies itself. An approved change is written, tested and verified before it enters the system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JUEZ -->
+<section aria-label="The judge">
+  <div class="wrap">
+    <h2>Nothing gets approved by luck.</h2>
+    <p class="lead">Before approving a hypothesis, the engine’s judge requires six conditions.</p>
+    <div class="judge">
+      <ul class="conds">
+        <li>At least 50 practice trades.</li>
+        <li>For every $1 it loses, it makes more than $1.40.</li>
+        <li>It repeats it on days it has never seen.<small>Practice days and test days are assigned by a fixed formula based on the date. No one picks them.</small></li>
+        <li>Luck can’t match it.<small>Its results are shuffled at random 10,000 times. Chance must match it less than 1 time in 100.</small></li>
+        <li>It works in at least 2 types of market.<small>For example, a day that fell with a lot of movement and a day that rose with little. 10 trades or more in each.</small></li>
+        <li>If it changes a strategy, it improves something without making anything worse.</li>
+      </ul>
+      <div class="today">
+        <div class="big">27</div>
+        <p>hypotheses being tested today.</p>
+        <hr>
+        <div class="big">0</div>
+        <p>approved so far. What’s missing is recorded market days, not rules.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEGOCIO -->
+<section class="alt" aria-label="How it makes money and how it grows">
+  <div class="wrap">
+    <h2>It makes money by investing its own capital.</h2>
+    <p class="lead">It doesn’t need clients. Every gain is added to the capital, and with more capital, every trade gets bigger.</p>
+    <ol class="path" aria-label="How it grows">
+      <li><div class="bar"></div><h3>NQ</h3><p>A strategy wins on Nasdaq‑100 futures.</p></li>
+      <li><div class="bar"></div><h3>ES</h3><p>The same strategy is tested on another futures market.</p></li>
+      <li><div class="bar"></div><h3>Options and stocks</h3><p>Strategies are adapted to each market’s rules and validated again before they trade.</p></li>
+      <li><div class="bar"></div><h3>Licensing</h3><p>FGS Intelligence Engine as a technology for funds and banks.</p></li>
+    </ol>
+    <p class="also">Meanwhile, the engine keeps validating new strategies. The system is built to keep improving.</p>
+  </div>
+</section>
+
+<!-- DÓNDE ESTAMOS -->
+<section aria-label="Where we are">
+  <div class="wrap">
+    <h2>Where we are, plainly.</h2>
+    <ol class="road">
+      <li class="done"><div><h3>Built.</h3><p>FGS Alpha and FGS Intelligence Engine, complete.</p></div></li>
+      <li class="cur"><div><h3>Now: fixing the details.</h3><p>The last adjustments to FGS Alpha and FGS Intelligence Engine so they run around the clock.</p></div></li>
+      <li><div><h3>See everything.</h3><p>A screen that shows, live, everything the system does.</p></div></li>
+      <li><div><h3>Validation: at least 6 months.</h3><p>It could drop to 3 or stretch to 8. Every strategy has to prove itself in bullish, bearish and sideways markets.</p></div></li>
+      <li><div><h3>Real money.</h3><p>Only with the strategies that passed validation.</p></div></li>
+    </ol>
+    <p class="honest">So far, few trades in a demo account: the system doesn’t run around the clock yet. Validation is what comes next.</p>
+  </div>
+</section>
+
+<!-- 2022 -->
+<section class="th story" aria-label="Why me">
+  <div class="wrap">
+    <h2>I arrived too early.</h2>
+    <div class="story-body">
+        <p>September 2022, months before ChatGPT existed. I arrived in Silicon Valley with an idea: <b>an AI that could answer any question humanity has</b>, built on the knowledge of the world’s largest publishers.</p>
+        <p>I walked Sand Hill Road and went to Y Combinator several times. No connections, little English, until I had spent my last dollar. In December I left for Los Angeles, just as AI began to change the world.</p>
+        <p>I couldn’t build it. I promised myself I would come back.</p>
+    </div>
+    <div class="finale" id="finale">
+      <p class="f1">In 2022 I had the idea, but not the tools.</p>
+      <p class="f2">Today I have both.</p>
+      <p class="f3">Yuniel Enríquez</p>
+    </div>
+    <div class="who">
+      <div><div class="name">Yuniel Enríquez</div><p>Author. I studied civil engineering and have led teams of programmers. Full-time on this since September 2025.</p></div>
+      <a href="mailto:yunielblog@gmail.com">yunielblog@gmail.com</a>
+    </div>
+    <p class="foot">Everything shown comes from what the system and the engine recorded. Trades in a demo account.</p>
+  </div>
+</section>
+
+<script>
+const DATA = {"mins":[{"t":"11:40","p":30066.75,"go":false,"r":"1101010100000111101010010111110101"},{"t":"11:41","p":30054.25,"go":false,"r":"1101010000000111001010000111100101"},{"t":"11:42","p":30060.75,"go":false,"r":"1101011000000110001010100111000101"},{"t":"11:43","p":30071.0,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:44","p":30070.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:45","p":30088.5,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:46","p":30076.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:47","p":30074.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:48","p":30073.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:49","p":30068.0,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:50","p":30062.0,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:51","p":30059.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:52","p":30054.75,"go":false,"r":"1101010000000111001010000111100101"},{"t":"11:53","p":30058.0,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:54","p":30067.5,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:55","p":30071.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:56","p":30085.25,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:57","p":30088.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"11:58","p":30087.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"11:59","p":30094.5,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:00","p":30109.25,"go":false,"r":"1101011110000110111000110001010000"},{"t":"12:01","p":30108.25,"go":false,"r":"1101010110000111111000010001110000"},{"t":"12:02","p":30103.0,"go":false,"r":"1101010010000111011000000001100000"},{"t":"12:03","p":30107.75,"go":false,"r":"1101011010000110011000100001000000"},{"t":"12:04","p":30105.25,"go":false,"r":"1101010010000111011000000001100000"},{"t":"12:05","p":30110.0,"go":false,"r":"1101011100000110101000110001010000"},{"t":"12:06","p":30110.0,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:07","p":30117.5,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:08","p":30115.25,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:09","p":30119.25,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:10","p":30123.5,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:11","p":30115.25,"go":false,"r":"1101010100000111101000010001110000"},{"t":"12:12","p":30119.75,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:13","p":30109.25,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:14","p":30099.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:15","p":30088.25,"go":false,"r":"1101010100000111101000010001110000"},{"t":"12:16","p":30087.25,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:17","p":30104.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:18","p":30091.25,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:19","p":30090.0,"go":false,"r":"1101010000000110001000000001000000"},{"t":"12:20","p":30100.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:21","p":30108.25,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:22","p":30115.5,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:23","p":30115.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:24","p":30116.5,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:25","p":30119.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:26","p":30116.5,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:27","p":30115.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:28","p":30107.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"12:29","p":30118.25,"go":false,"r":"1101011000000110001000100001000000"},{"t":"12:30","p":30103.75,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:31","p":30120.5,"go":false,"r":"1101011100000110101000110001010000"},{"t":"12:32","p":30102.0,"go":false,"r":"1101010100000111101010010011110101"},{"t":"12:33","p":30105.75,"go":false,"r":"1101011100000110101010110011010101"},{"t":"12:34","p":30117.75,"go":false,"r":"1101011100000110101000110001010000"},{"t":"12:35","p":30098.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:36","p":30090.0,"go":false,"r":"1101010100000111101010010011110101"},{"t":"12:37","p":30072.0,"go":false,"r":"1101010100000111101010010011110101"},{"t":"12:38","p":30067.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:39","p":30077.25,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:40","p":30078.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:41","p":30087.0,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:42","p":30075.0,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:43","p":30083.25,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:44","p":30079.75,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:45","p":30081.5,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:46","p":30072.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:47","p":30072.0,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:48","p":30059.5,"go":false,"r":"1101010100000111101010010011110101"},{"t":"12:49","p":30073.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:50","p":30064.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:51","p":30061.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:52","p":30067.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:53","p":30057.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:54","p":30050.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:55","p":30061.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:56","p":30063.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"12:57","p":30056.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:58","p":30054.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"12:59","p":30066.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"13:00","p":30059.5,"go":false,"r":"1101010100000111101010010011110101"},{"t":"13:01","p":30062.25,"go":false,"r":"1101011000000110001010100011000101"},{"t":"13:02","p":30064.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"13:03","p":30049.75,"go":false,"r":"1101010000000111001010000011100101"},{"t":"13:04","p":30054.75,"go":false,"r":"1101011000000110001010100011000101"},{"t":"13:05","p":30052.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"13:06","p":30057.0,"go":false,"r":"1101011000000110001010100011000101"},{"t":"13:07","p":30054.25,"go":false,"r":"1101010000000111001010000011100101"},{"t":"13:08","p":30054.25,"go":false,"r":"1101011100000110101010110011010101"},{"t":"13:09","p":30057.25,"go":false,"r":"1101011000000110001010100011000101"},{"t":"13:10","p":30071.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"13:11","p":30083.25,"go":false,"r":"1101011100000110101000110001010000"},{"t":"13:12","p":30077.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"13:13","p":30078.0,"go":false,"r":"1101011000000110001000100001000000"},{"t":"13:14","p":30079.75,"go":false,"r":"1101011000000110001000100001000000"},{"t":"13:15","p":30063.75,"go":false,"r":"1101010000000111001000000001100000"},{"t":"13:16","p":30057.0,"go":false,"r":"1101010100000111101000010001110000"},{"t":"13:17","p":30057.0,"go":false,"r":"1101010000000110001000000001000000"},{"t":"13:18","p":30052.0,"go":false,"r":"1101010000000111001000000001100000"},{"t":"13:19","p":30049.0,"go":false,"r":"1101010000000111001000000001100000"},{"t":"13:20","p":30038.0,"go":false,"r":"1101010100000111101010010011110101"},{"t":"13:21","p":30033.75,"go":false,"r":"1101010000000111001010000111100101"},{"t":"13:22","p":30049.25,"go":false,"r":"1101011000000110001000100001000000"},{"t":"13:23","p":30039.5,"go":false,"r":"1101010000000111001010000011100101"},{"t":"13:24","p":30037.75,"go":false,"r":"1101010000000111001010000111100101"},{"t":"13:25","p":30074.25,"go":false,"r":"1101011100000110101000110001010000"},{"t":"13:26","p":30052.25,"go":false,"r":"1101010000000111001000000001100000"},{"t":"13:27","p":30044.5,"go":false,"r":"1101010100000111101000010001110000"},{"t":"13:28","p":30044.0,"go":false,"r":"1101010100000111101000010001110000"},{"t":"13:29","p":30024.5,"go":false,"r":"1101010100000111101010010111110101"},{"t":"13:30","p":30014.5,"go":false,"r":"1101010100000111101010010111110101"},{"t":"13:31","p":29996.75,"go":false,"r":"1101010100000111101010010111110101"},{"t":"13:32","p":30011.5,"go":false,"r":"1101011100000110101010110111010101"},{"t":"13:33","p":29987.75,"go":false,"r":"1101010100000111101010010111110101"},{"t":"13:34","p":29970.5,"go":false,"r":"1101010100000111101010010111110101"},{"t":"13:44","p":29936.25,"go":false,"r":"1101011100000110101010110111010101"},{"t":"13:45","p":29922.0,"go":false,"r":"1100010100001111101010010111110101"},{"t":"13:46","p":29938.0,"go":false,"r":"1100011100001110101010110111010101"},{"t":"13:47","p":29890.75,"go":false,"r":"1100010100001111101010010111110101"},{"t":"13:48","p":29882.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:49","p":29902.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"13:50","p":29887.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:51","p":29873.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:52","p":29887.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"13:53","p":29896.5,"go":false,"r":"1100011000001110001010100111000101"},{"t":"13:54","p":29936.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"13:55","p":29930.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:56","p":29924.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:57","p":29915.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:58","p":29882.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"13:59","p":29895.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:00","p":29872.0,"go":false,"r":"1100010010001111011010000111100101"},{"t":"14:01","p":29823.75,"go":false,"r":"1100010010001111011010000111100101"},{"t":"14:02","p":29836.25,"go":false,"r":"1100011010001110011010100111000101"},{"t":"14:03","p":29842.0,"go":false,"r":"1100011010001110011010100111000101"},{"t":"14:04","p":29854.5,"go":false,"r":"1100011010001110011010100111000101"},{"t":"14:05","p":29851.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:06","p":29809.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:07","p":29824.75,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:08","p":29834.0,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:09","p":29836.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:10","p":29831.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:11","p":29871.0,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:12","p":29861.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:13","p":29855.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:14","p":29863.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:15","p":29849.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:16","p":29826.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:17","p":29820.5,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:18","p":29855.5,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:19","p":29837.5,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:20","p":29793.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:21","p":29825.5,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:22","p":29837.5,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:23","p":29863.5,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:24","p":29866.0,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:25","p":29858.0,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:26","p":29870.75,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:27","p":29876.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:28","p":29866.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:29","p":29857.5,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:30","p":29855.75,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:31","p":29840.5,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:32","p":29864.0,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:33","p":29859.5,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:34","p":29842.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:35","p":29836.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:36","p":29820.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:37","p":29809.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:38","p":29807.75,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:39","p":29815.0,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:40","p":29819.25,"go":false,"r":"1100011000001110001010100111000101"},{"t":"14:41","p":29809.25,"go":false,"r":"1100010000001111001010000111100101"},{"t":"14:42","p":29848.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:43","p":29868.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:44","p":29870.75,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:45","p":29880.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:46","p":29892.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:47","p":29899.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:48","p":29914.25,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:49","p":29916.75,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:50","p":29906.75,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:51","p":29907.0,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:52","p":29900.75,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:53","p":29912.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:54","p":29912.0,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:55","p":29915.25,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:56","p":29920.0,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:57","p":29939.0,"go":false,"r":"1100011000001110001010100011000101"},{"t":"14:58","p":29937.25,"go":false,"r":"1100010000001111001010000011100101"},{"t":"14:59","p":29937.25,"go":false,"r":"1100010000001111001010000011100101"},{"t":"15:00","p":29937.25,"go":false,"r":"1100011010000110011010100011000101"},{"t":"15:01","p":29893.75,"go":false,"r":"1100010010000111011010000011100101"},{"t":"15:02","p":29882.75,"go":false,"r":"1100010010000111011010000011100101"},{"t":"15:03","p":29853.75,"go":false,"r":"1100010010000111011010000011100101"},{"t":"15:04","p":29839.25,"go":false,"r":"1100010010000111011010000011100101"},{"t":"15:05","p":29846.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:06","p":29843.5,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:07","p":29853.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:08","p":29852.25,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:09","p":29862.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:10","p":29825.25,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:11","p":29816.25,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:12","p":29801.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:13","p":29817.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:14","p":29797.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:15","p":29764.0,"go":false,"r":"1100010100000111101010010111110101"},{"t":"15:16","p":29743.25,"go":false,"r":"1100010100000111101010010111110101"},{"t":"15:17","p":29731.0,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:18","p":29720.5,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:19","p":29702.0,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:20","p":29704.5,"go":false,"r":"1100011100000110101010110111010101"},{"t":"15:21","p":29716.5,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:22","p":29718.5,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:23","p":29713.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:24","p":29716.75,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:25","p":29713.5,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:26","p":29719.25,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:27","p":29728.25,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:28","p":29712.0,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:29","p":29712.5,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:30","p":29698.0,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:31","p":29681.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:32","p":29661.75,"go":false,"r":"1100010100000111101010010111110101"},{"t":"15:33","p":29682.5,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:34","p":29677.0,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:35","p":29688.75,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:36","p":29698.25,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:37","p":29675.75,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:38","p":29683.5,"go":false,"r":"1100011000000110001010100111000101"},{"t":"15:39","p":29682.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:40","p":29724.25,"go":false,"r":"1100011100000110101010110011010101"},{"t":"15:41","p":29705.25,"go":false,"r":"1100010000000111001010000111100101"},{"t":"15:42","p":29714.25,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:43","p":29723.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:44","p":29723.75,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:45","p":29717.75,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:46","p":29727.25,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:47","p":29719.75,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:48","p":29731.75,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:49","p":29736.5,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:50","p":29735.5,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:51","p":29735.25,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:52","p":29731.25,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:53","p":29726.75,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:54","p":29719.0,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:55","p":29730.75,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:56","p":29736.25,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:57","p":29747.0,"go":false,"r":"1100011000000110001010100011000101"},{"t":"15:58","p":29744.75,"go":false,"r":"1100010000000111001010000011100101"},{"t":"15:59","p":29727.75,"go":false,"r":"1100010000000111001010000011100101"},{"t":"16:00","p":29728.25,"go":false,"r":"1100011010001110011010100011000101"},{"t":"16:01","p":29700.0,"go":false,"r":"1100010110001111111010010011110101"},{"t":"16:02","p":29709.25,"go":false,"r":"1100011010001110011010100011000101"},{"t":"16:03","p":29706.25,"go":false,"r":"1100010010001111011010000011100101"},{"t":"16:04","p":29685.25,"go":false,"r":"1100010010001111011010000011100101"},{"t":"16:05","p":29683.25,"go":false,"r":"1100010100001111101010010011110101"},{"t":"16:06","p":29679.25,"go":false,"r":"1100010000001111001010000011100101"},{"t":"16:07","p":29671.5,"go":false,"r":"1100010000001111001010000011100101"},{"t":"16:08","p":29673.5,"go":false,"r":"1100011000001110001010100011000101"},{"t":"16:09","p":29658.75,"go":false,"r":"1100010000001111001010000011100101"},{"t":"16:10","p":29637.5,"go":true,"r":"1100010100001111101010010011110111"}],"groups":[["E1",9],["E2",9],["E3",6],["E4",6],["E5",2],["E6",2]],"trade":{"candles":[{"t":"16:06","o":29682.75,"h":29697.25,"l":29679.25,"c":29679.25},{"t":"16:07","o":29678.0,"h":29684.25,"l":29670.75,"c":29671.5},{"t":"16:08","o":29671.75,"h":29679.75,"l":29669.25,"c":29673.5},{"t":"16:09","o":29673.75,"h":29675.5,"l":29656.0,"c":29658.75},{"t":"16:10","o":29659.0,"h":29659.75,"l":29635.25,"c":29637.5},{"t":"16:11","o":29637.75,"h":29641.0,"l":29628.0,"c":29637.25},{"t":"16:12","o":29636.75,"h":29645.75,"l":29609.0,"c":29618.75},{"t":"16:13","o":29618.25,"h":29632.5,"l":29611.0,"c":29630.25},{"t":"16:14","o":29630.75,"h":29648.5,"l":29624.75,"c":29643.75},{"t":"16:15","o":29644.5,"h":29647.75,"l":29629.75,"c":29640.75}],"entry":{"min":"16:11","sec":0.161193,"price":29636.75},"exit":{"min":"16:11","sec":38.291796,"price":29634.5}}};
+const $ = s => document.querySelector(s);
+const M = DATA.mins, N = M.length, G = DATA.groups;
+const ENTRY = M.findIndex(m => m.go);
+const ct = t => { const h = +t.slice(0, 2) - 5; return (h > 12 ? h - 12 : h) + ':' + t.slice(3) + ' ' + (h >= 12 ? 'PM' : 'AM'); };
+const fp = p => p.toLocaleString('en-US', {minimumFractionDigits: 2});
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const START = []; G.reduce((a, g) => { START.push(a); return a + g[1]; }, 0);
+
+/* ---------- portada: repetición del día ---------- */
+const prices = M.map(m => m.p), pmin = Math.min(...prices), pmax = Math.max(...prices);
+const HX = i => 4 + i / (N - 1) * 992, HY = p => 140 - (p - pmin) / (pmax - pmin) * 128;
+const hrows = $('#hrows');
+G.forEach(([s, n]) => {
+  const r = document.createElement('div'); r.className = 'row'; r.id = 'hr' + s;
+  r.innerHTML = `<b>${s}</b><div class="dots">${'<span class="dot"></span>'.repeat(n)}</div><div class="n"></div>`;
+  hrows.appendChild(r);
+});
+$('#hs').max = N - 1;
+function heroAt(i) {
+  const m = M[i];
+  $('#hs').value = i;
+  $('#clk').textContent = ct(m.t);
+  const pts = prices.slice(0, i + 1).map((p, k) => HX(k).toFixed(1) + ',' + HY(p).toFixed(1)).join(' ');
+  $('#hp').innerHTML = `<polyline points="${pts}" fill="none" stroke="#E9EDF4" stroke-width="2" stroke-linejoin="round"/>` +
+    `<circle cx="${HX(i)}" cy="${HY(prices[i])}" r="5" fill="${m.go ? '#F2B33D' : '#E9EDF4'}"/>` +
+    `<text x="996" y="12" text-anchor="end" font-size="14" fill="#8E99AD" font-family="-apple-system,Segoe UI,sans-serif">${fp(prices[i])}</text>`;
+  G.forEach(([s, n], gi) => {
+    const row = $('#hr' + s), dots = row.querySelectorAll('.dot');
+    let c = 0;
+    for (let k = 0; k < n; k++) { const on = m.r[START[gi] + k] === '1'; if (on) c++; dots[k].classList.toggle('on', on); }
+    row.querySelector('.n').textContent = c + ' of ' + n;
+    row.classList.toggle('full', c === n);
+  });
+  const f = $('#hfin');
+  f.className = m.go ? 'go' : '';
+  f.innerHTML = m.go ? `${ct(m.t)}. <span>E6 meets all its rules and enters.</span>` : `${ct(m.t)}. No strategy meets all its rules. It does nothing.`;
+}
+let ht = null;
+const stop = () => { clearInterval(ht); ht = null; };
+function heroPlay() {
+  stop();
+  if (reduce) { heroAt(ENTRY); return; }
+  let i = 0; heroAt(0);
+  ht = setInterval(() => { i++; heroAt(i); if (i >= ENTRY) stop(); }, 55);
+}
+$('#hplay').onclick = heroPlay;
+$('#hs').oninput = e => { stop(); heroAt(+e.target.value); };
+heroAt(0); setTimeout(heroPlay, 700);
+
+/* ---------- la operación ---------- */
+function renderTrade(anim) {
+  const T = DATA.trade, W = 1000, H = 420, L = 70, R = 930, TOP = 60, BOT = 340;
+  const GRID = '#1C2840', TXT = '#8E99AD', UPC = '#26a69a', DNC = '#ef5350', BUYC = '#4C7DFF', SELLC = '#E5484D', FOC = '#F2B33D';
+  const kk = T.candles.findIndex(c => c.t === T.entry.min);
+  const C = T.candles.slice(kk - 3, kk + 4), k = 3;
+  const lo = Math.min(...C.map(c => c.l)) - 10, hi = Math.max(...C.map(c => c.h)) + 10;
+  const sw = (R - L) / C.length, Yp = p => BOT - (p - lo) / (hi - lo) * (BOT - TOP);
+  const xT = (kx, sec) => L + (kx + sec / 60) * sw;
+  const xe = xT(k, T.entry.sec), xx = xT(k, T.exit.sec), ye = Yp(T.entry.price), yx = Yp(T.exit.price);
+  const hh = c => ct(c.t).replace(/ [AP]M$/, '');
+  const F = 'font-family="-apple-system,Segoe UI,sans-serif"';
+  let g = '';
+  for (let p = Math.ceil(lo / 10) * 10; p <= hi; p += 10) g += `<line x1="${L}" x2="${R}" y1="${Yp(p)}" y2="${Yp(p)}" stroke="${GRID}"/><text x="${R + 8}" y="${Yp(p) + 5}" font-size="14" fill="${TXT}" ${F}>${p.toLocaleString('en-US')}</text>`;
+  const fx = L + k * sw;
+  g += `<rect x="${fx + 3}" y="${Yp(C[k].h)}" width="${sw - 6}" height="${Yp(C[k].l) - Yp(C[k].h)}" fill="${FOC}" fill-opacity=".10" stroke="${FOC}" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="${fx + sw / 2}" y="${BOT + 28}" text-anchor="middle" font-size="15" font-weight="700" fill="${FOC}" ${F}>${hh(C[k])} candle</text>`;
+  C.forEach((c, i) => {
+    const cx = L + (i + .5) * sw, col = c.c >= c.o ? UPC : DNC, y1 = Yp(Math.max(c.o, c.c)), y2 = Yp(Math.min(c.o, c.c));
+    g += `<line x1="${cx}" x2="${cx}" y1="${Yp(c.h)}" y2="${Yp(c.l)}" stroke="${col}" stroke-width="2"/><rect x="${cx - 18}" y="${y1}" width="36" height="${Math.max(2, y2 - y1)}" fill="${col}"/>`;
+    if (i !== k) g += `<text x="${cx}" y="${BOT + 28}" text-anchor="middle" font-size="14" fill="${TXT}" ${F}>${hh(c)}</text>`;
+  });
+  const pill = (x0, y, w, txt, col) => `<rect x="${x0}" y="${y}" width="${w}" height="32" rx="16" fill="${col}"/><text x="${x0 + w / 2}" y="${y + 21}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff" ${F}>${txt}</text>`;
+  const tag = (x0, y, txt, col) => `<rect x="${x0}" y="${y - 11}" width="86" height="22" rx="4" fill="${col}"/><text x="${x0 + 43}" y="${y + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" ${F}>${txt}</text>`;
+  g += `<g class="a a1"><line x1="${xe}" x2="${R}" y1="${ye}" y2="${ye}" stroke="${SELLC}" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <line x1="${xe}" x2="${xe}" y1="${TOP - 4}" y2="${BOT + 40}" stroke="${SELLC}" stroke-width="2.5"/>
+      <circle cx="${xe}" cy="${ye}" r="8" fill="${SELLC}" stroke="#fff" stroke-width="3"/>
+      ${pill(xe - 300, TOP - 42, 296, 'ENTRY SHORT  ' + fp(T.entry.price), SELLC)}
+      ${tag(R - 90, ye - 14, fp(T.entry.price), SELLC)}
+      <text x="${xe}" y="${BOT + 56}" text-anchor="end" dx="-4" font-size="14" font-weight="700" fill="${SELLC}" ${F}>11:11:00</text></g>
+    <g class="a a2"><rect x="${xe}" y="${TOP}" width="${xx - xe}" height="${BOT - TOP}" fill="#fff" opacity=".10"/><text x="${(xe + xx) / 2}" y="${TOP + 22}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff" ${F}>38 s</text></g>
+    <g class="a a3"><line x1="${xx}" x2="${L}" y1="${yx}" y2="${yx}" stroke="${BUYC}" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <line x1="${xx}" x2="${xx}" y1="${TOP - 4}" y2="${BOT + 40}" stroke="${BUYC}" stroke-width="2.5"/>
+      <circle cx="${xx}" cy="${yx}" r="8" fill="${BUYC}" stroke="#fff" stroke-width="3"/>
+      ${pill(xx + 6, BOT - 46, 220, 'EXIT  ' + fp(T.exit.price), BUYC)}
+      ${tag(L + 2, yx + 14, fp(T.exit.price), BUYC)}
+      <text x="${xx}" y="${BOT + 56}" dx="4" font-size="14" font-weight="700" fill="${BUYC}" ${F}>11:11:38</text></g>`;
+  $('#tr').innerHTML = `<div class="${anim ? 'anim' : ''}">
+    <div class="tr-svg"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="NQ 1-minute candles. Short entry at 29,636.75 at 11:11:00. Exit at 29,634.50 at 11:11:38.">${g}</svg></div>
+    <div class="a a3"><div style="overflow-x:auto"><table class="blot"><thead><tr><th>Time</th><th>Event</th><th>Position</th><th>Contract</th><th class="r">Price</th></tr></thead><tbody>
+      <tr><td>11:11:00</td><td style="color:${SELLC};font-weight:700">Entry</td><td>SHORT 1</td><td>NQ December 2026</td><td class="r">${fp(T.entry.price)}</td></tr>
+      <tr><td>11:11:38</td><td style="color:${BUYC};font-weight:700">Exit</td><td>Flat</td><td>NQ December 2026</td><td class="r">${fp(T.exit.price)}</td></tr>
+    </tbody></table></div>
+    <div class="pl"><span class="small">Recorded result</span><b>+$45.00</b><button class="btn" id="trplay">Replay</button></div></div>
+  </div>`;
+  $('#trplay').onclick = () => renderTrade(true);
+}
+renderTrade(false);
+if ('IntersectionObserver' in window && !reduce) {
+  const fin = $('#finale'); fin.classList.add('pre');
+  const io2 = new IntersectionObserver(es => { if (es[0].isIntersecting) { fin.classList.remove('pre'); io2.disconnect(); } }, {threshold: .6});
+  io2.observe(fin);
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) { renderTrade(true); io.disconnect(); } }, {threshold: .35});
+  io.observe($('#tr'));
+}
+</script>
+</body>
+</html>
